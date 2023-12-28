@@ -180,8 +180,8 @@ func main() {
 	if gcfg.Prefix != "" {
 		log.Printf("url prefix: %s", gcfg.Prefix)
 	}
-
-	ss := NewHTTPStaticServer(gcfg.Root, gcfg.NoIndex)
+	DBModel.DBRead("ghs-stats.json")
+	ss := NewHTTPStaticServer(gcfg.Root, gcfg.NoIndex, DBModel)
 	ss.Prefix = gcfg.Prefix
 	ss.Theme = gcfg.Theme
 	ss.Title = gcfg.Title
