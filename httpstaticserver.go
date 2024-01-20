@@ -115,7 +115,7 @@ func NewHTTPStaticServer(root string, noIndex bool, dbmodel Model) *HTTPStaticSe
 	m.HandleFunc("/-/ipa/link/{path:.*}", s.hIpaLink)
 
 	m.HandleFunc("/{path:.*}", s.hIndex).Methods("GET", "HEAD")
-	m.HandleFunc("/{path:.*}", s.hWebdav).Methods("OPTIONS", "PROPFIND", "PUT", "LOCK", "UNLOCK","MKCOL", "MOVE")
+	m.HandleFunc("/{path:.*}", s.hWebdav).Methods("OPTIONS", "PROPFIND", "PUT", "LOCK", "UNLOCK","MKCOL", "MOVE", "PROPPATCH")
 	m.HandleFunc("/{path:.*}", s.hUploadOrMkdir).Methods("POST")
 	m.HandleFunc("/{path:.*}", s.hDelete).Methods("DELETE")
 	return s
@@ -126,9 +126,14 @@ func (s *HTTPStaticServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *HTTPStaticServer) hWebdav(w http.ResponseWriter, r *http.Request) {
+	path := mux.Vars(r)["path"]
 	realPath := s.getRealPath(r)
 	auth := s.readAccessConf(realPath)
 
+	if filepath.Base(path) == YAMLCONF {
+		http.Error(w, "Security warning, not allowed to rw", http.StatusForbidden)
+		return
+	}
 	if !auth.canWebdavAccess(w, r) {
 		http.Error(w, "Not authorized", 401)
 		return
@@ -157,7 +162,10 @@ func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
 	auth := s.readAccessConf(realPath)
 
 	if !auth.canUserAccess(r) {
-		return
+		if !auth.canWebdavAccess(w, r) {
+			http.Error(w, "Get forbidden", http.StatusForbidden)
+			return
+		}
 	}
 
 	if r.FormValue("json") == "true" {
@@ -183,11 +191,8 @@ func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
 		renderHTML(w, "assets/index.html", s)
 	} else {
 		if filepath.Base(path) == YAMLCONF {
-			auth := s.readAccessConf(realPath)
-			if !auth.Delete {
-				http.Error(w, "Security warning, not allowed to read", http.StatusForbidden)
-				return
-			}
+			http.Error(w, "Security warning, not allowed to read", http.StatusForbidden)
+			return
 		}
 		if r.FormValue("download") == "true" {
 			w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(filepath.Base(path)))
@@ -198,11 +203,17 @@ func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *HTTPStaticServer) hDelete(w http.ResponseWriter, req *http.Request) {
-	realPath := s.getRealPath(req)
+func (s *HTTPStaticServer) hDelete(w http.ResponseWriter, r *http.Request) {
+	path := mux.Vars(r)["path"]
+	realPath := s.getRealPath(r)
 	auth := s.readAccessConf(realPath)
-	if !auth.canDelete(req) {
-		if !auth.canWebdavAccess(w, req) {
+
+	if filepath.Base(path) == YAMLCONF {
+		http.Error(w, "Security warning, not allowed to read", http.StatusForbidden)
+		return
+	}
+	if !auth.canDelete(r) {
+		if !auth.canWebdavAccess(w, r) {
 			http.Error(w, "Delete forbidden", http.StatusForbidden)
 			return
 		}
@@ -219,7 +230,7 @@ func (s *HTTPStaticServer) hDelete(w http.ResponseWriter, req *http.Request) {
 	//	}
 	//	return
 	//}
-	s.Handler.ServeHTTP(w, req)
+	s.Handler.ServeHTTP(w, r)
 	//w.Write([]byte("Success"))
 }
 
