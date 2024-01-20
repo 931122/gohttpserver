@@ -303,6 +303,29 @@
     ga('create', '[[.GoogleTrackerID]]', 'auto');
     ga('send', 'pageview');
   </script> [[ end ]]
+  <div class="modal" id="passwordModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document" style="width: 300px;">
+      <div class="modal-content">
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+          <h5 class="modal-title">please input passwd</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+          <div class="form-inline">
+            <label for="password" class="mr-2">passwd：</label>
+            <input type="password" class="form-control flex-grow-1" id="password" onkeydown="handleKeyDown(event)">
+          </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="text-align:center">
+          <button type="button" class="btn btn-primary"  onclick="checkPassword()">确认</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
 
 </html>

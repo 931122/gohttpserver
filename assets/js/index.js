@@ -36,6 +36,7 @@ function showErrorMessage(jqXHR) {
   console.error(errMsg)
 }
 
+var retry = 0
 var vm = new Vue({
   el: "#app",
   data: {
@@ -242,10 +243,12 @@ var vm = new Vue({
         window.location.href = reqPath;
         return;
       }
+      retry = 0;
       loadFileOrDir(reqPath);
       e.preventDefault()
     },
     changePath: function (reqPath, e) {
+      retry = 0;
       loadFileOrDir(reqPath);
       e.preventDefault()
     },
@@ -379,6 +382,20 @@ function loadFileOrDir(reqPath) {
 
 }
 
+var retry_url = ""
+function handleKeyDown(event) {
+  if (event.keyCode === 13) {
+    event.preventDefault();
+    checkPassword();
+  }
+}
+
+function checkPassword() {
+  var token = document.getElementById("password").value;
+  $('#passwordModal').modal('hide');
+  loadFileOrDir(retry_url + '?token=' + token);
+}
+
 function loadFileList(pathname) {
   var pathname = pathname || location.pathname + location.search;
   var retObj = null
@@ -398,7 +415,18 @@ function loadFileList(pathname) {
         vm.updateBreadcrumb(pathname);
       },
       error: function (jqXHR, textStatus, errorThrown) {
-        showErrorMessage(jqXHR)
+        if (retry === 0) {
+          retry++;
+          retry_url = pathname;
+          $('#passwordModal').modal('show');
+          $('#passwordModal').on('shown.bs.modal', function () {
+            $('#passwordInput').focus();
+          });
+        }
+        else {
+         showErrorMessage(jqXHR)
+        }
+
       },
     });
 
