@@ -87,7 +87,7 @@ func NewHTTPStaticServer(cfg *Configure) *HTTPStaticServer {
 		FileSystem: webdav.Dir(root),
 		LockSystem: webdav.NewMemLS(),
 	}
-	DBModel.DBRead("ghs-stats.json")
+	DBModel.DBRead(root + "ghs-stats.json")
 	m := mux.NewRouter()
 	s := &HTTPStaticServer{
 		Root:  root,
