@@ -50,6 +50,11 @@ type Configure struct {
 	} `yaml:"auth"`
 	DeepPathMaxDepth int  `yaml:"deep-path-max-depth"`
 	NoIndex          bool `yaml:"no-index"`
+	IpBan           struct {
+		LimitCount int8 `yaml:limit`
+		CycleSecond int32 `yaml:cycles`
+		BanTime	int8 `yaml:bantime`
+	} `yaml:"ipban"`
 }
 
 type httpLogger struct{}
@@ -102,6 +107,9 @@ func parseFlags() error {
 	gcfg.Title = "Go HTTP File Server"
 	gcfg.DeepPathMaxDepth = 5
 	gcfg.NoIndex = false
+	gcfg.IpBan.LimitCount = 5
+	gcfg.IpBan.CycleSecond = 60
+	gcfg.IpBan.BanTime = 5
 
 	kingpin.HelpFlag.Short('h')
 	kingpin.Version(versionMessage())
@@ -177,8 +185,7 @@ func main() {
 	if gcfg.Prefix != "" {
 		log.Printf("url prefix: %s", gcfg.Prefix)
 	}
-	DBModel.DBRead("ghs-stats.json")
-	ss := NewHTTPStaticServer(gcfg.Root, gcfg.NoIndex, DBModel)
+	ss := NewHTTPStaticServer(&gcfg)
 	ss.Prefix = gcfg.Prefix
 	ss.Theme = gcfg.Theme
 	ss.Title = gcfg.Title

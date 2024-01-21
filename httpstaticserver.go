@@ -26,6 +26,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/shogo82148/androidbinary/apk"
 	"golang.org/x/net/webdav"
+	"ipmanage"
 )
 
 const YAMLCONF = ".ghs.yml"
@@ -66,37 +67,42 @@ type HTTPStaticServer struct {
 	indexes []IndexFileItem
 	m       *mux.Router
 	Handler  *webdav.Handler
+	Ipcheck ipmanage.IIPManage
 	bufPool sync.Pool // use sync.Pool caching buf to reduce gc ratio
 }
 
-func NewHTTPStaticServer(root string, noIndex bool, dbmodel Model) *HTTPStaticServer {
+func NewHTTPStaticServer(cfg *Configure) *HTTPStaticServer {
 	// if root == "" {
 	// 	root = "./"
 	// }
 	// root = filepath.ToSlash(root)
-	root = filepath.ToSlash(filepath.Clean(root))
+	root := filepath.ToSlash(filepath.Clean(cfg.Root))
 	if !strings.HasSuffix(root, "/") {
 		root = root + "/"
 	}
+	stopchan:=make(chan bool,1)
+	ipcheck, _ := ipmanage.InitIpVisit(cfg.IpBan.LimitCount, cfg.IpBan.CycleSecond, cfg.IpBan.BanTime, stopchan)
 	log.Printf("root path: %s\n", root)
 	fs := &webdav.Handler{
 		FileSystem: webdav.Dir(root),
 		LockSystem: webdav.NewMemLS(),
 	}
+	DBModel.DBRead("ghs-stats.json")
 	m := mux.NewRouter()
 	s := &HTTPStaticServer{
 		Root:  root,
 		Theme: "black",
 		m:     m,
 		Handler:     fs,
+		Ipcheck:     ipcheck,
 		bufPool: sync.Pool{
 			New: func() interface{} { return make([]byte, 32*1024) },
 		},
-		NoIndex: noIndex,
-		DBModel: dbmodel,
+		NoIndex: cfg.NoIndex,
+		DBModel: DBModel,
 	}
 
-	if !noIndex {
+	if !cfg.NoIndex {
 		go func() {
 			time.Sleep(1 * time.Second)
 			for {
@@ -129,12 +135,20 @@ func (s *HTTPStaticServer) hWebdav(w http.ResponseWriter, r *http.Request) {
 	path := mux.Vars(r)["path"]
 	realPath := s.getRealPath(r)
 	auth := s.readAccessConf(realPath)
+	ipclient := getRemoteClientIp(r)
+	time, _ := s.Ipcheck.IsBan(ipclient)
+
+	if time < 0 {
+		http.Error(w, "Please try again in " + strconv.Itoa(int(-time)) + " minute", http.StatusForbidden)
+		return
+	}
 
 	if filepath.Base(path) == YAMLCONF {
 		http.Error(w, "Security warning, not allowed to rw", http.StatusForbidden)
 		return
 	}
 	if !auth.canWebdavAccess(w, r) {
+		s.Ipcheck.Add(ipclient)
 		http.Error(w, "Not authorized", 401)
 		return
 	}
@@ -160,9 +174,16 @@ func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
 	path := mux.Vars(r)["path"]
 	realPath := s.getRealPath(r)
 	auth := s.readAccessConf(realPath)
+	ipclient := getRemoteClientIp(r)
+	time, _ := s.Ipcheck.IsBan(ipclient)
 
+	if time < 0 {
+		http.Error(w, "Please try again in " + strconv.Itoa(int(-time)) + " minute", http.StatusForbidden)
+		return
+	}
 	if !auth.canUserAccess(r) {
 		if !auth.canWebdavAccess(w, r) {
+			s.Ipcheck.Add(ipclient)
 			http.Error(w, "Get forbidden", http.StatusForbidden)
 			return
 		}
@@ -900,4 +921,24 @@ func DldIncre(model Model, rAddress string, path string) {
 	if DCounter.Validate(ip, path) {
 		model.Incre(path)
 	}
+}
+
+
+func getRemoteClientIp(r *http.Request) string {
+	remoteIp := r.RemoteAddr
+
+	if ip := r.Header.Get("X-Real-IP"); ip != "" {
+		remoteIp = ip
+	} else if ip = r.Header.Get("X-Forwarded-For"); ip != "" {
+		remoteIp = ip
+	} else {
+		remoteIp, _, _ = net.SplitHostPort(remoteIp)
+	}
+
+	//本地ip
+	if remoteIp == "::1" {
+		remoteIp = "127.0.0.1"
+	}
+
+	return remoteIp
 }
