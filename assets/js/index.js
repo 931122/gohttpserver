@@ -373,13 +373,7 @@ window.onpopstate = function (event) {
 
 function loadFileOrDir(reqPath) {
   let requestUri = reqPath + location.search
-  var retObj = loadFileList(requestUri)
-  if (retObj !== null) {
-    retObj.done(function () {
-      window.history.pushState({}, "", requestUri);
-    });
-  }
-
+  loadFileList(requestUri)
 }
 
 var retry_url = ""
@@ -413,6 +407,7 @@ function loadFileList(pathname) {
         vm.files = res.files;
         vm.auth = res.auth;
         vm.updateBreadcrumb(pathname);
+        window.history.pushState({}, "", pathname);
       },
       error: function (jqXHR, textStatus, errorThrown) {
         if (retry === 0) {

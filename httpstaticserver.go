@@ -177,6 +177,15 @@ func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
 	ipclient := getRemoteClientIp(r)
 	time, _ := s.Ipcheck.IsBan(ipclient)
 
+	if (r.FormValue("raw") == "false" || isDir(realPath)) && (r.FormValue("json") == "" && r.FormValue("op") == "") {
+		if r.Method == "HEAD" {
+			return
+		}
+		log.Println(11111111)
+		renderHTML(w, "assets/index.html", s)
+		return
+	}
+
 	if time < 0 {
 		http.Error(w, "Please try again in " + strconv.Itoa(int(-time)) + " minute", http.StatusForbidden)
 		return
@@ -204,24 +213,17 @@ func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Println("GET", path, realPath)
-	if r.FormValue("raw") == "false" || isDir(realPath) {
-		if r.Method == "HEAD" {
-			return
-		}
-		renderHTML(w, "assets/index.html", s)
-	} else {
-		if filepath.Base(path) == YAMLCONF {
-			http.Error(w, "Security warning, not allowed to read", http.StatusForbidden)
-			return
-		}
-		if r.FormValue("download") == "true" {
-			w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(filepath.Base(path)))
-			DldIncre(s.DBModel, r.RemoteAddr, path)
-		}
-		s.Handler.ServeHTTP(w, r)
-		//http.ServeFile(w, r, realPath)
+	log.Println("GET", path)
+	if filepath.Base(path) == YAMLCONF {
+		http.Error(w, "Security warning, not allowed to read", http.StatusForbidden)
+		return
 	}
+	if r.FormValue("download") == "true" {
+		w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(filepath.Base(path)))
+		DldIncre(s.DBModel, r.RemoteAddr, path)
+	}
+	s.Handler.ServeHTTP(w, r)
+	//http.ServeFile(w, r, realPath)
 }
 
 func (s *HTTPStaticServer) hDelete(w http.ResponseWriter, r *http.Request) {
