@@ -419,12 +419,10 @@ function loadFileList(pathname) {
           retry++;
           retry_url = pathname;
           $('#passwordModal').modal('show');
-          $('#passwordModal').on('shown.bs.modal', function () {
-            $('#passwordInput').focus();
-          });
+          $('#password').focus();
         }
         else {
-         showErrorMessage(jqXHR)
+          showErrorMessage(jqXHR)
         }
 
       },

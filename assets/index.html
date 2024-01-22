@@ -315,13 +315,15 @@
         <div class="modal-body">
           <div class="form-group">
           <div class="form-inline">
-            <label for="password" class="mr-2">passwd：</label>
-            <input type="password" class="form-control flex-grow-1" id="password" onkeydown="handleKeyDown(event)">
+            <form>
+              <label for="password" class="mr-2">passwd:</label>
+              <input type="password" class="form-control" autocomplete="off" id="password" onkeydown="handleKeyDown(event)">
+            </form>
           </div>
           </div>
         </div>
         <div class="modal-footer" style="text-align:center">
-          <button type="button" class="btn btn-primary"  onclick="checkPassword()">确认</button>
+          <button type="button" class="btn btn-primary"  onclick="checkPassword()">confirm</button>
         </div>
       </div>
     </div>
