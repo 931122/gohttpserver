@@ -115,7 +115,7 @@ func NewHTTPStaticServer(root string, noIndex bool) *HTTPStaticServer {
 	m.HandleFunc("/{path:.*}", s.hIndex).Methods("GET", "HEAD")
 	m.HandleFunc("/{path:.*}", s.hUploadOrMkdir).Methods("POST")
 	m.HandleFunc("/{path:.*}", s.hDelete).Methods("DELETE")
-	m.HandleFunc("/{path:.*}", s.hWebdav).Methods("OPTIONS", "PROPFIND", "PUT", "LOCK", "UNLOCK","MKCOL", "MOVE", "PROPPATCH")
+	m.HandleFunc("/{path:.*}", s.hWebdav).Methods("OPTIONS", "PROPFIND", "PUT", "LOCK", "UNLOCK", "MKCOL", "MOVE", "PROPPATCH")
 	return s
 }
 
