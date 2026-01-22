@@ -133,7 +133,7 @@ func (s *HTTPStaticServer) hWebdav(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !auth.canWebdavAccess(w, r) {
-		http.Error(w, "Not authorized", 401)
+		http.Error(w, "Not authorized", http.StatusUnauthorized)
 		return
 	}
 
