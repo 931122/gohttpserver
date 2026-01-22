@@ -1,8 +1,12 @@
-# gohttpserver
-[![Docker Automated build](https://img.shields.io/docker/automated/codeskyblue/gohttpserver)](https://hub.docker.com/repository/docker/codeskyblue/gohttpserver)
+# gohttpserver (not maintained)
 
-**I've recently ported a new one using Python. Have a look at it here: https://github.com/codeskyblue/servefs**
+Alternatives
 
+- <https://github.com/sigoden/dufs> Writtern in Rust
+- <https://github.com/9001/copyparty> Writtern in Python
+- <https://github.com/codeskyblue/servefs> (A new port file server project)
+
+# doc
 - Goal: Make the best HTTP File Server.
 - Features: Human-friendly UI, file uploading support, direct QR-code generation for Apple & Android install package.
 
