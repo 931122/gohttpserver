@@ -161,7 +161,7 @@ func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
 	auth := s.readAccessConf(realPath)
 
 	if !auth.canWebdavAccess(w, r) {
-		http.Error(w, "Get forbidden", http.StatusForbidden)
+		http.Error(w, "Not authorized", http.StatusForbidden)
 		return
 	}
 
