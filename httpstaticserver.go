@@ -160,9 +160,14 @@ func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
 	realPath := s.getRealPath(r)
 	auth := s.readAccessConf(realPath)
 
-	if !auth.canWebdavAccess(w, r) {
-		http.Error(w, "Not authorized", http.StatusForbidden)
-		return
+	// Only apply WebDAV-specific access control for non-GET/HEAD methods.
+	// For standard read operations (GET/HEAD), rely on the normal authentication
+	// mechanism (e.g., session-based auth/middleware) instead of canWebdavAccess.
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
+		if !auth.canWebdavAccess(w, r) {
+			http.Error(w, "Get forbidden", http.StatusForbidden)
+			return
+		}
 	}
 
 	if r.FormValue("json") == "true" {
