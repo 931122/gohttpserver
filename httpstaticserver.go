@@ -198,7 +198,6 @@ func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(filepath.Base(path)))
 		}
 		s.Handler.ServeHTTP(w, r)
-		//http.ServeFile(w, r, realPath)
 	}
 }
 
